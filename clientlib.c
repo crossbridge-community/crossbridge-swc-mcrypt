@@ -31,10 +31,11 @@
 /**
  *  ClientLib
  *  clientlib.c
- *  Purpose: Client library implementation
+ *  Purpose: MCrypt SWC Wrapper
  *
  *  @author Andras Csizmadia
  *  @version 1.0
+ *  @see https://gist.github.com/bricef/2436364
  */
 
 //----------------------------------
@@ -47,38 +48,31 @@
 #include <string.h>
 
 #include <mutils/mcrypt.h>
-
 #include "clientlib.h"
 
 //----------------------------------
-//  Constants
+//  Helpers
 //----------------------------------
 
 /**
  * @private
  */
-#define PAYLOAD "HelloWorld";
-
-//----------------------------------
-//  API
-//----------------------------------
-
-// see: https://gist.github.com/bricef/2436364
-
 void display(char* ciphertext, int len){
-    int v;
-    for (v=0; v<len; v++){
-    printf("%d ", ciphertext[v]);
+    int i;
+    for (i = 0; i < len; i++){
+        printf("%d", ciphertext[i]);
     }
     printf("\n");
 }
 
-int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+/**
+ * @private
+ */
+int doEncrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
     /* Because the plaintext could include null bytes*/
-    if( buffer_len % blocksize != 0 ){return 1;}
-     
+    if( buffer_len % blocksize != 0 ){return 1;}     
     mcrypt_generic_init(td, key, key_len, IV);
     mcrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
@@ -86,7 +80,10 @@ int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char
     return 0;
 }
  
-int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+/**
+ * @private
+ */
+int doDecrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
     /* Because the plaintext could include null bytes*/
@@ -98,21 +95,41 @@ int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char
     return 0;
 }
 
+//----------------------------------
+//  API
+//----------------------------------
+
 /**
  * @see clientlib.h 
  */
-void testMCrypt(){     
-    // TODO: test all algorithms and modes
-    
-    // 3-way, arcfour, blowfish, cast-128, des, enigma, gos, loki97, panama, rc2, rijndael, rijndael-128, rijndael-192, rijndael-256, safer, saferplus, serpent, tripledes, twofish, wake, xtea
-    char* algo = "rijndael-128";
-    
-    // cbs, cfb, ctr, ecb, ncfb, nofb, ofb, stream
-    char* mode = "cbc";
-    
+int encrypt(int algo, int mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+    // TODO: switch by algo and mode
+    char* algo_name = "rijndael-128";
+    char* mode_name = "cbc";
+    int result = 1;
+    result = doEncrypt(algo_name, mode_name, buffer, buffer_len, IV, key, key_len);
+    return result;
+}
+
+/**
+ * @see clientlib.h 
+ */
+int decrypt(int algo, int mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+    // TODO: switch by algo and mode
+    char* algo_name = "rijndael-128";
+    char* mode_name = "cbc";
+    int result = 1;
+    result = doDecrypt(algo_name, mode_name, buffer, buffer_len, IV, key, key_len);
+    return result;
+}
+
+/**
+ * @see clientlib.h 
+ */
+int selftest(){         
     char * plaintext = "test text 123";
     char* IV = "AAAAAAAAAAAAAAAA";
-    char *key = "0123456789abcdef";
+    char* key = "0123456789abcdef";
     int keysize = 16; /* 128 bits */
     char* buffer;
     int buffer_len = 16;
@@ -120,19 +137,11 @@ void testMCrypt(){
     buffer = calloc(1, buffer_len);
     strncpy(buffer, plaintext, buffer_len);
      
-    printf("Testing: %s | %s", algo, mode);
-    printf("plain: %s", plaintext);
-    encrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
-    printf("cipher: "); display(buffer , buffer_len);
-    decrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
-    printf("decrypt: %s", buffer); 
-}
-
-/**
- * @see clientlib.h 
- */
-void getPayload(char** out, int* outsize){
-    char* version = PAYLOAD;
-    *out = version;
-    *outsize = strlen(version);
+    printf("plain: %s\n", plaintext);
+    encrypt(ALGO_RIJNDAEL128, MODE_CBC, buffer, buffer_len, IV, key, keysize);
+    printf("cipher: "); display(buffer, buffer_len);
+    //printf("cipher: %s\n", buffer);
+    decrypt(ALGO_RIJNDAEL128, MODE_CBC, buffer, buffer_len, IV, key, keysize);
+    printf("decrypt: %s\n", buffer); 
+    return 0;
 }

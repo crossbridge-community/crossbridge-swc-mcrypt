@@ -84,8 +84,9 @@ public class ClientLibExample extends Sprite implements ISpecialFile {
 
         addEventListener(Event.ENTER_FRAME, enterFrame);
 
-        // test
-        ClientLib.testMCrypt();
+        // tests
+        printLine("ClientLib.VERSION: " + ClientLib.VERSION);
+        ClientLib.selftest();
     }
         
      
