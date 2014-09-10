@@ -63,52 +63,73 @@
 //  API
 //----------------------------------
 
+// see: https://gist.github.com/bricef/2436364
+
+void display(char* ciphertext, int len){
+    int v;
+    for (v=0; v<len; v++){
+    printf("%d ", ciphertext[v]);
+    }
+    printf("\n");
+}
+
+int encrypt(
+    void* buffer,
+    int buffer_len, /* Because the plaintext could include null bytes*/
+    char* IV,
+    char* key,
+    int key_len
+){
+    MCRYPT td = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
+    int blocksize = mcrypt_enc_get_block_size(td);
+    if( buffer_len % blocksize != 0 ){return 1;}
+     
+    mcrypt_generic_init(td, key, key_len, IV);
+    mcrypt_generic(td, buffer, buffer_len);
+    mcrypt_generic_deinit (td);
+    mcrypt_module_close(td);
+    return 0;
+}
+ 
+int decrypt(
+    void* buffer,
+    int buffer_len,
+    char* IV,
+    char* key,
+    int key_len
+){
+    MCRYPT td = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
+    int blocksize = mcrypt_enc_get_block_size(td);
+    if( buffer_len % blocksize != 0 ){return 1;}
+    mcrypt_generic_init(td, key, key_len, IV);
+    mdecrypt_generic(td, buffer, buffer_len);
+    mcrypt_generic_deinit (td);
+    mcrypt_module_close(td);
+    return 0;
+}
+
 /**
  * @see clientlib.h 
  */
 void testMCrypt(){ 
-    MCRYPT td; 
-    int i;
-    char *key; /* created using mcrypt_gen_key */
-    char *block_buffer;
-    char *IV;
-    int blocksize;
-    int keysize = 24; /* 192 bits == 24 bytes */
-
-
-    key = calloc(1, keysize);
-    strcpy(key, "A_large_and_random_key"); 
-
-    td = mcrypt_module_open("saferplus", NULL, "cbc", NULL);
-
-    blocksize = mcrypt_enc_get_block_size(td);
-    block_buffer = malloc(blocksize);
-    /* but unfortunately this does not fill all the key so the rest bytes are
-    * padded with zeros. Try to use large keys or convert them with mcrypt_gen_key().
-    */
-
-    IV=malloc(mcrypt_enc_get_iv_size(td));
-
-    /* Put random data in IV. Note these are not real random data, 
-    * consider using /dev/random or /dev/urandom.
-    */
-
-    /* srand(time(0)); */
-    for (i=0; i < mcrypt_enc_get_iv_size(td); i++) {
-    IV[i]=rand();
-    }
-
-    mcrypt_generic_init(td, key, keysize, IV);
-
-    /* Encryption in CBC is performed in blocks */
-    while ( fread (block_buffer, 1, blocksize, stdin) == blocksize ) {
-      mcrypt_generic (td, block_buffer, blocksize);
-    /*      mdecrypt_generic (td, block_buffer, blocksize); */
-      fwrite ( block_buffer, 1, blocksize, stdout);
-    }
-    mcrypt_generic_end (td);
+    MCRYPT td, td2;
+    char * plaintext = "test text 123";
+    char* IV = "AAAAAAAAAAAAAAAA";
+    char *key = "0123456789abcdef";
+    int keysize = 16; /* 128 bits */
+    char* buffer;
+    int buffer_len = 16;
+     
+    buffer = calloc(1, buffer_len);
+    strncpy(buffer, plaintext, buffer_len);
+     
+    printf("==C==\n");
+    printf("plain: %s\n", plaintext);
+    encrypt(buffer, buffer_len, IV, key, keysize);
+    printf("cipher: "); display(buffer , buffer_len);
+    decrypt(buffer, buffer_len, IV, key, keysize);
+    printf("decrypt: %s\n", buffer); 
 }
-
 
 /**
  * @see clientlib.h 
