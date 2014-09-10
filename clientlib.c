@@ -73,15 +73,10 @@ void display(char* ciphertext, int len){
     printf("\n");
 }
 
-int encrypt(
-    void* buffer,
-    int buffer_len, /* Because the plaintext could include null bytes*/
-    char* IV,
-    char* key,
-    int key_len
-){
-    MCRYPT td = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
+int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+    MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
+    /* Because the plaintext could include null bytes*/
     if( buffer_len % blocksize != 0 ){return 1;}
      
     mcrypt_generic_init(td, key, key_len, IV);
@@ -91,15 +86,10 @@ int encrypt(
     return 0;
 }
  
-int decrypt(
-    void* buffer,
-    int buffer_len,
-    char* IV,
-    char* key,
-    int key_len
-){
-    MCRYPT td = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
+int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+    MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
+    /* Because the plaintext could include null bytes*/
     if( buffer_len % blocksize != 0 ){return 1;}
     mcrypt_generic_init(td, key, key_len, IV);
     mdecrypt_generic(td, buffer, buffer_len);
@@ -111,8 +101,15 @@ int decrypt(
 /**
  * @see clientlib.h 
  */
-void testMCrypt(){ 
-    MCRYPT td, td2;
+void testMCrypt(){     
+    // TODO: test all algorithms and modes
+    
+    // 3-way, arcfour, blowfish, cast-128, des, enigma, gos, loki97, panama, rc2, rijndael, rijndael-128, rijndael-192, rijndael-256, safer, saferplus, serpent, tripledes, twofish, wake, xtea
+    char* algo = "rijndael-128";
+    
+    // cbs, cfb, ctr, ecb, ncfb, nofb, ofb, stream
+    char* mode = "cbc";
+    
     char * plaintext = "test text 123";
     char* IV = "AAAAAAAAAAAAAAAA";
     char *key = "0123456789abcdef";
@@ -123,12 +120,12 @@ void testMCrypt(){
     buffer = calloc(1, buffer_len);
     strncpy(buffer, plaintext, buffer_len);
      
-    printf("==C==\n");
-    printf("plain: %s\n", plaintext);
-    encrypt(buffer, buffer_len, IV, key, keysize);
+    printf("Testing: %s | %s", algo, mode);
+    printf("plain: %s", plaintext);
+    encrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
     printf("cipher: "); display(buffer , buffer_len);
-    decrypt(buffer, buffer_len, IV, key, keysize);
-    printf("decrypt: %s\n", buffer); 
+    decrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
+    printf("decrypt: %s", buffer); 
 }
 
 /**
