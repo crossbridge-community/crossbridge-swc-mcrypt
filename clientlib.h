@@ -62,41 +62,17 @@ extern "C" {
 //  Encryption Algorithms
 //----------------------------------
 
-#define ALGO_3WAY 1
-#define ALGO_ARCFOUR 2
-#define ALGO_BLOWFISH 3
-#define ALGO_CAST128 4
-#define ALGO_DES 5
-#define ALGO_ENIGMA 6
-#define ALGO_GOS 7
-#define ALGO_LOKI97 8
-#define ALGO_PANAMA 9
-#define ALGO_RC2 10
-#define ALGO_RIJNDAEL 11
-#define ALGO_RIJNDAEL128 12
-#define ALGO_RIJNDAEL192 13
-#define ALGO_RIJNDAEL256 14
-#define ALGO_SAFER 15
-#define ALGO_SAFERPLUS 16
-#define ALGO_SERPENT 17
-#define ALGO_TRIPLEDES 18
-#define ALGO_TWOFISH 19
-#define ALGO_WAKE 20
-#define ALGO_XTEA 21
+#define ALGO_RIJNDAEL_128 "rijndael-128"
 
 //----------------------------------
 //  Encryption Modes
 //----------------------------------
 
-#define MODE_CBC 1
-#define MODE_CBS 2
-#define MODE_CFB 3
-#define MODE_CTR 4
-#define MODE_ECB 5
-#define MODE_NCFB 6
-#define MODE_NOFB 7
-#define MODE_OFB 8
-#define MODE_STREAM 9 
+#define MODE_ECB "ecb"
+#define MODE_CBC "cbc"
+#define MODE_CFB "cfb"
+#define MODE_OFB "ofb"
+#define MODE_CTR "ctr"
 
 //----------------------------------
 //  API
@@ -116,7 +92,7 @@ extern "C" {
  * @return int
  *
  */
-int encrypt(int algo, int mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
+int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
 
 /**
  * Does the decryption
@@ -131,7 +107,7 @@ int encrypt(int algo, int mode, void* buffer, int buffer_len, char* IV, char* ke
  *
  * @return int
  */
-int decrypt(int algo, int mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
+int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
 
 /**
  * Runs a self test

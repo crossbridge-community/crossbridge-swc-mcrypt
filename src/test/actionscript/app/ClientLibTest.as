@@ -41,7 +41,7 @@ public class ClientLibTest extends Sprite {
     [Before]
     public function setUp():void {
         if(!CModule.rootSprite) {
-        CModule.throwWhenOutOfMemory = true;
+            CModule.throwWhenOutOfMemory = true;
             CModule.rootSprite = this;
             CModule.startAsync(this);
             CModule.serviceUIRequests();        
@@ -53,20 +53,8 @@ public class ClientLibTest extends Sprite {
     public function tearDown():void {
     }
     
-    [Test]
-    public function test_getPayload():void {
-        // Program start
-        var outputPtr:int = CModule.malloc(4);
-        var outputLengthPtr:int = CModule.malloc(4);
-        ClientLib.getPayload(outputPtr, outputLengthPtr);
-        var outputLength:int = CModule.read32(outputLengthPtr);
-        var outputString:String = CModule.readString(CModule.read32(outputPtr), outputLength);
-        // printLine("Payload: " + outputString + " (length=" + outputLength + ")");
-        CModule.free(outputPtr);
-        CModule.free(outputLengthPtr);
-        Assert.assertNotNull(outputString);
-        Assert.assertEquals(outputString.length, outputLength);
-        Assert.assertEquals(outputString, "HelloWorld");
-    }
+    /*[Test]
+    public function test_encrypt_decrypt():void {
+    }*/
 }
 }
