@@ -28,7 +28,7 @@
  *
  */
 
-package app {
+package {
 import app.ClientLib.CModule;
 
 import flash.display.Sprite;
@@ -53,8 +53,9 @@ public class ClientLibTest extends Sprite {
     public function tearDown():void {
     }
     
-    /*[Test]
+    [Test]
     public function test_encrypt_decrypt():void {
-    }*/
+        Assert.assertNotNull(CModule.rootSprite);
+    }
 }
 }
