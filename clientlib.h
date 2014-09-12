@@ -53,12 +53,6 @@ extern "C" {
 #endif
 
 //----------------------------------
-//  Library Version
-//----------------------------------
-
-#define VERSION "1.0.0" 
-
-//----------------------------------
 //  Encryption Algorithms
 //----------------------------------
 
@@ -92,7 +86,7 @@ extern "C" {
  * @return int
  *
  */
-int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
+int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
 
 /**
  * Does the decryption
@@ -107,7 +101,7 @@ int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char
  *
  * @return int
  */
-int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
+int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
 
 /**
  * Runs a self test

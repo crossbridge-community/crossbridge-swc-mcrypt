@@ -95,7 +95,7 @@ swc:
         ClientLib_wrapper.c \
         ClientLib.h \
         ClientLib.c \
-        -flto-api=temp/exports.txt -swf-version=26 -emit-swc=app.ClientLib -o publish/ClientLib.swc -lmcrypt
+        -flto-api=temp/exports.txt -swf-version=26 -emit-swc=app.ClientLib -o publish/ClientLib.swc -lmcrypt -lmhash
 	mv ClientLib_wrapper.c temp/ClientLib_wrapper.c
 
 # Generate test SWF

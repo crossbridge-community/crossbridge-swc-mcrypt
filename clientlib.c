@@ -48,6 +48,7 @@
 #include <string.h>
 
 #include <mutils/mcrypt.h>
+#include <mhash.h>
 #include "clientlib.h"
 
 //----------------------------------
@@ -72,7 +73,7 @@ void display(char* ciphertext, int len){
 /**
  * @private
  */
-int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
     /* Because the plaintext could include null bytes*/
@@ -87,7 +88,7 @@ int encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char
 /**
  * @private
  */
-int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
+int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
     int blocksize = mcrypt_enc_get_block_size(td);
     /* Because the plaintext could include null bytes*/
@@ -96,6 +97,43 @@ int decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char
     mdecrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
     mcrypt_module_close(td);
+    return 0;
+}
+
+/**
+ * @see clientlib.h 
+ */
+int ext_hash(hashid type, char* buffer){ 
+    MHASH td;
+    td = mhash_init(type);
+    if (td == MHASH_FAILED) exit(1);
+
+    int buffer_len = strlen(buffer);
+    mhash(td, buffer, buffer_len);
+
+    unsigned char hash[16]; 
+    mhash_deinit(td, hash);
+
+    unsigned int i;
+    for (i = 0; i < mhash_get_block_size(type); i++) {
+        printf("%.2x", hash[i]);
+    }
+    printf("\n");
+ 
+    return 0;
+}
+
+/**
+ * @see clientlib.h 
+ */
+int ext_hmac(){ 
+    return 0;
+}
+
+/**
+ * @see clientlib.h 
+ */
+int ext_keygen(){ 
     return 0;
 }
 
@@ -116,10 +154,32 @@ int selftest(){
     strncpy(buffer, plaintext, buffer_len);
      
     printf("plain: %s\n", plaintext);
-    encrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
+    ext_encrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
     printf("cipher: "); display(buffer, buffer_len);
     //printf("cipher: %s\n", buffer);
-    decrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
+    ext_decrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
     printf("decrypt: %s\n", buffer); 
+    
+    // MHASH
+    
+     // source data
+    char* test_hash = "Hello World"; 
+    
+    // md5: b10a8db164e0754105b7a99be72e3fe5
+    printf("Testing MHASH_MD5 ...\n");
+    ext_hash(MHASH_MD5, test_hash);
+    
+    // sha1: 0a4d55a8d778e5022fab701977c5d840bbc486d0
+    printf("Testing MHASH_SHA1 ...\n");
+    ext_hash(MHASH_SHA1, test_hash);
+       
+    // sha256: a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e
+    printf("Testing MHASH_SHA256 ...\n");
+    ext_hash(MHASH_SHA256, test_hash);
+    
+    // sha512: 2c74fd17edafd80e8447b0d46741ee243b7eb74dd2149a0ab1b9246fb30382f27e853d8585719e0e67cbda0daa8f51671064615d645ae27acb15bfb1447f459b
+    printf("Testing MHASH_SHA512 ...\n");
+    ext_hash(MHASH_SHA512, test_hash);
+    
     return 0;
 }
