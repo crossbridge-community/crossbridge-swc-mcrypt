@@ -60,7 +60,7 @@ all: clean swig abc obj swc swf
 clean:
 	@echo "-------------------------------------------- Clean --------------------------------------------"
 	rm -rf build/
-    rm -rf release/
+	rm -rf release/
 	rm -rf temp/
 	mkdir -p build
 	mkdir -p release
