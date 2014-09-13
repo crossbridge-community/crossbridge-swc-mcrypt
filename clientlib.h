@@ -53,20 +53,45 @@ extern "C" {
 #endif
 
 //----------------------------------
-//  Encryption Algorithms
+//  MHash Constants
 //----------------------------------
 
-#define ALGO_RIJNDAEL_128 "rijndael-128"
+#include "mutils/mglobal.h"
 
 //----------------------------------
-//  Encryption Modes
+//  MCrypt Constants
 //----------------------------------
 
-#define MODE_ECB "ecb"
-#define MODE_CBC "cbc"
-#define MODE_CFB "cfb"
-#define MODE_OFB "ofb"
-#define MODE_CTR "ctr"
+/* Algorithms */
+#define MCRYPT_BLOWFISH		"blowfish"
+#define MCRYPT_DES 		"des"
+#define MCRYPT_3DES 		"tripledes"
+#define MCRYPT_3WAY 		"threeway"
+#define MCRYPT_GOST 		"gost"
+#define MCRYPT_SAFER_SK64 	"safer-sk64"
+#define MCRYPT_SAFER_SK128 	"safer-sk128"
+#define MCRYPT_CAST_128 	"cast-128"
+#define MCRYPT_XTEA 		"xtea"
+#define MCRYPT_RC2	 	"rc2"
+#define MCRYPT_TWOFISH 		"twofish"
+#define MCRYPT_CAST_256 	"cast-256"
+#define MCRYPT_SAFERPLUS 	"saferplus"
+#define MCRYPT_LOKI97 		"loki97"
+#define MCRYPT_SERPENT 		"serpent"
+#define MCRYPT_RIJNDAEL_128 	"rijndael-128"
+#define MCRYPT_RIJNDAEL_192 	"rijndael-192"
+#define MCRYPT_RIJNDAEL_256 	"rijndael-256"
+#define MCRYPT_ENIGMA 		"enigma"
+#define MCRYPT_ARCFOUR		"arcfour"
+#define MCRYPT_WAKE		"wake"
+
+	/* Modes */
+#define MCRYPT_CBC		"cbc"
+#define MCRYPT_ECB		"ecb"
+#define MCRYPT_CFB		"cfb"
+#define MCRYPT_OFB		"ofb"
+#define MCRYPT_nOFB		"nofb"
+#define MCRYPT_STREAM		"stream"
 
 //----------------------------------
 //  API
@@ -104,9 +129,16 @@ int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
 int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len);
 
 /**
- * Runs a self test
+ * Hashes a string
+ *
+ * @param hashid
+ * @param buffer
+ * @param out
+ * @param outsize
+ *
+ * @return int
  */
-int selftest();
+int ext_hash(int type, char* buffer, unsigned char** out, unsigned int* outsize);
 
 //----------------------------------
 //  CPP End

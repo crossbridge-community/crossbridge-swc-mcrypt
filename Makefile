@@ -69,7 +69,7 @@ clean:
 # Generate SWIG AS3 Wrappers
 swig:
 	@echo "-------------------------------------------- SWIG --------------------------------------------"
-	"$(FLASCC)/usr/bin/swig" -I./. -as3 -module ClientLib -outdir . -includeall -ignoremissing -o ClientLib_wrapper.c $(PWD)/as3api.h
+	"$(FLASCC)/usr/bin/swig" -I./. -I$(FLASCC)/usr/include -as3 -module ClientLib -outdir . -includeall -ignoremissing -o ClientLib_wrapper.c $(PWD)/as3api.h
 
 # Generate ABC ByteCode
 abc:

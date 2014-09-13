@@ -70,6 +70,7 @@ public class Main extends Sprite implements ISpecialFile {
         // setup the output text area
         output = new TextField();
         output.multiline = true;
+        output.wordWrap = true;
         output.width = stage.stageWidth;
         output.height = stage.stageHeight;
         addChild(output);        
@@ -79,13 +80,42 @@ public class Main extends Sprite implements ISpecialFile {
 
         CModule.startAsync(this);
 
-        printLine("CModule.canUseWorkers: " + CModule.canUseWorkers);
-        printLine("CModule.throwWhenOutOfMemory: " + CModule.throwWhenOutOfMemory);
+        //addEventListener(Event.ENTER_FRAME, enterFrame);
 
-        addEventListener(Event.ENTER_FRAME, enterFrame);
+        printLine("MD5:");
+        testAlgo(ClientLib.MHASH_MD5, "b10a8db164e0754105b7a99be72e3fe5");
 
-        // tests
-        ClientLib.selftest();
+        printLine("SHA1:");
+        testAlgo(ClientLib.MHASH_SHA1, "0a4d55a8d778e5022fab701977c5d840bbc486d0");
+
+        printLine("SHA256:");
+        testAlgo(ClientLib.MHASH_SHA256, "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e");
+
+        printLine("SHA512:");
+        testAlgo(ClientLib.MHASH_SHA512, "2c74fd17edafd80e8447b0d46741ee243b7eb74dd2149a0ab1b9246fb30382f27e853d8585719e0e67cbda0daa8f51671064615d645ae27acb15bfb1447f459b");
+
+        var bytes:ByteArray = new ByteArray();
+        bytes.endian = "littleEndian";
+        for(var i:int=0;i<16;i++)
+            bytes.writeInt(i);
+        bytes.position = 0;
+        var bytesPtr:int = CModule.malloc(bytes.length);
+        CModule.writeBytes(bytesPtr, bytes.length, bytes);
+        printLine(ClientLib.ext_encrypt(ClientLib.MCRYPT_RIJNDAEL_128, ClientLib.MCRYPT_CBC, bytesPtr, bytes.length, "AAAAAAAAAAAAAAAA", "0123456789abcdef", 16).toString());
+    }
+
+    /**
+     * @private
+     */
+    private function testAlgo(type:int, expected:String):void {
+        var outputPtr:int = CModule.malloc(4);
+        var outputLengthPtr:int = CModule.malloc(4);
+        ClientLib.ext_hash(type, "Hello World", outputPtr, outputLengthPtr);
+        var outputLength:int = CModule.read32(outputLengthPtr);
+        var outputString:String = CModule.readString(CModule.read32(outputPtr), outputLength);
+        printLine(outputString + " (length=" + outputLength + ")" + " (success=" + (outputString == expected) + ")");
+        CModule.free(outputPtr);
+        CModule.free(outputLengthPtr);
     }
         
      
@@ -171,6 +201,78 @@ public class Main extends Sprite implements ISpecialFile {
      */
     public function ioctl(fd:int, com:int, data:int, errnoPtr:int):int {
         return 0
+    }
+
+    // HEX Helpers
+
+
+    //----------------------------------
+    //  Static methods
+    //----------------------------------
+
+    /**
+     * Generates byte-array from given hexadecimal string
+     *
+     * Supports straight and colon-laced hex (that means 23:03:0e:f0, but *NOT* 23:3:e:f0)
+     * The first nibble (hex digit) may be omitted.
+     * Any whitespace characters are ignored.
+     */
+    public static function toArray(hex:String):ByteArray {
+        hex = hex.replace(/^0x|\s|:/gm, '');
+        var array:ByteArray = new ByteArray();
+        if ((hex.length & 1) == 1)
+            hex = "0" + hex;
+        const n:uint = hex.length;
+        for (var i:uint = 0; i < n; i += 2) {
+            array[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        return array;
+    }
+
+    /**
+     * Generates lowercase hexadecimal string from given byte-array
+     */
+    public static function fromArray(array:ByteArray, colons:Boolean = false):String {
+        var s:String = "";
+        const n:uint = array.length;
+        for (var i:uint = 0; i < n; i++) {
+            s += ("0" + array[i].toString(16)).substr(-2, 2);
+            if (colons && i < n - 1) {
+                s += ":";
+            }
+        }
+        return s;
+    }
+
+    /**
+     * Generates string from given hexadecimal string
+     */
+    public static function toString(hex:String, charSet:String = 'utf-8'):String {
+        var array:ByteArray = toArray(hex);
+        return array.readMultiByte(array.length, charSet);
+    }
+
+    /**
+     * Convenience method for generating string using iso-8859-1
+     */
+    public static function toRawString(hex:String):String {
+        return toString(hex, 'iso-8859-1');
+    }
+
+    /**
+     * Generates hexadecimal string from given string
+     */
+    public static function fromString(str:String, colons:Boolean = false, charSet:String = 'utf-8'):String {
+        var array:ByteArray = new ByteArray;
+        array.writeMultiByte(str, charSet);
+        return fromArray(array, colons);
+    }
+
+    /**
+     * Convenience method for generating hexadecimal string using iso-8859-1
+     */
+    public static function fromRawString(str:String, colons:Boolean = false):String {
+        return fromString(str, colons, 'iso-8859-1');
     }
 
 }

@@ -120,10 +120,10 @@ task compile(type: JavaExec) {
     classpath = files("${AIR_HOME}/lib/compiler.jar")
     workingDir = "${projectDir}"
     def argsList = [
-                'ClientLibExample.as',
+                'src/main/actionscript/Main.as',
                 '-debug=true',
                 '-load-config+="temp/.flexConfig.xml"',
-                '-output="build/ClientLibExample.swf"'
+                '-output="build/Main.swf"'
             ]
     def airConfig = "${AIR_HOME}" + '/frameworks/flex-config.xml'
     def loadAirConfig = '-load-config+='+"${airConfig}";
@@ -138,12 +138,12 @@ task test << {
     reportDir.mkdirs()
     ant.taskdef(resource: 'flexUnitTasks.tasks', classpath: configurations.test.asPath) 
     ant.flexunit(workingDir:'bin',toDir:'build/reports',haltonfailure:'false',verbose:'true',player:'flash',headless:'false',localTrusted:'true') {
-        source(dir: '.')
-        testSource(dir: '.') {
+        source(dir: 'src/main/actionscript')
+        testSource(dir: 'src/test/actionscript') {
            include(name: '**/*Test.as')
         }
         library(dir: 'bin')
-        library(dir: 'publish')
+        library(dir: 'release')
     }
 }
 

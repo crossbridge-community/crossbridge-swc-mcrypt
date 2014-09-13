@@ -52,6 +52,41 @@
 #include "clientlib.h"
 
 //----------------------------------
+//  Static
+//----------------------------------
+
+/* Algorithms */
+#define MCRYPT_BLOWFISH		"blowfish"
+#define MCRYPT_DES 		"des"
+#define MCRYPT_3DES 		"tripledes"
+#define MCRYPT_3WAY 		"threeway"
+#define MCRYPT_GOST 		"gost"
+#define MCRYPT_SAFER_SK64 	"safer-sk64"
+#define MCRYPT_SAFER_SK128 	"safer-sk128"
+#define MCRYPT_CAST_128 	"cast-128"
+#define MCRYPT_XTEA 		"xtea"
+#define MCRYPT_RC2	 	"rc2"
+#define MCRYPT_TWOFISH 		"twofish"
+#define MCRYPT_CAST_256 	"cast-256"
+#define MCRYPT_SAFERPLUS 	"saferplus"
+#define MCRYPT_LOKI97 		"loki97"
+#define MCRYPT_SERPENT 		"serpent"
+#define MCRYPT_RIJNDAEL_128 	"rijndael-128"
+#define MCRYPT_RIJNDAEL_192 	"rijndael-192"
+#define MCRYPT_RIJNDAEL_256 	"rijndael-256"
+#define MCRYPT_ENIGMA 		"enigma"
+#define MCRYPT_ARCFOUR		"arcfour"
+#define MCRYPT_WAKE		"wake"
+
+	/* Modes */
+#define MCRYPT_CBC		"cbc"
+#define MCRYPT_ECB		"ecb"
+#define MCRYPT_CFB		"cfb"
+#define MCRYPT_OFB		"ofb"
+#define MCRYPT_nOFB		"nofb"
+#define MCRYPT_STREAM		"stream"
+
+//----------------------------------
 //  Helpers
 //----------------------------------
 
@@ -66,18 +101,46 @@ void display(char* ciphertext, int len){
     printf("\n");
 }
 
+/**
+ * @private
+ */
+void bin_to_hex(unsigned char *bin, unsigned int binsz, unsigned char **result)
+{
+  unsigned char          hex_str[]= "0123456789abcdef";
+  unsigned int  i;
+
+  *result = (unsigned char *)malloc(binsz * 2 + 1);
+  (*result)[binsz * 2] = 0;
+
+  if (!binsz)
+    return;
+
+  for (i = 0; i < binsz; i++)
+    {
+      (*result)[i * 2 + 0] = hex_str[bin[i] >> 4  ];
+      (*result)[i * 2 + 1] = hex_str[bin[i] & 0x0F];
+    }
+}
+
 //----------------------------------
 //  API
 //----------------------------------
+
+// const unsigned char* buffer
+// void* buffer
 
 /**
  * @private
  */
 int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
+    if( !td ){return 1;}
     int blocksize = mcrypt_enc_get_block_size(td);
-    /* Because the plaintext could include null bytes*/
-    if( buffer_len % blocksize != 0 ){return 1;}     
+    int keysize = mcrypt_enc_get_key_size(td);
+    printf("keysize: %d\n", keysize);
+    printf("key_len: %d\n", key_len);
+    if( buffer_len % blocksize != 0 ){return 1;}
+    //if( key_len % keysize != 0 ){return 3;}
     mcrypt_generic_init(td, key, key_len, IV);
     mcrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
@@ -90,9 +153,13 @@ int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
  */
 int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, char* key, int key_len){
     MCRYPT td = mcrypt_module_open(algo, NULL, mode, NULL);
+    if( !td ){return 1;}
     int blocksize = mcrypt_enc_get_block_size(td);
-    /* Because the plaintext could include null bytes*/
+    int keysize = mcrypt_enc_get_key_size(td);
+    printf("keysize: %d\n", keysize);
+    printf("key_len: %d\n", key_len);
     if( buffer_len % blocksize != 0 ){return 1;}
+    //if( key_len % keysize != 0 ){return 3;}
     mcrypt_generic_init(td, key, key_len, IV);
     mdecrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
@@ -101,25 +168,36 @@ int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
 }
 
 /**
- * @see clientlib.h 
+ * @see clientlib.h
  */
-int ext_hash(hashid type, char* buffer){ 
+int ext_hash(int type, char* buffer, unsigned char** out, unsigned int* outsize){
     MHASH td;
-    td = mhash_init(type);
+    td = mhash_init((hashid)type);
     if (td == MHASH_FAILED) exit(1);
 
     int buffer_len = strlen(buffer);
     mhash(td, buffer, buffer_len);
 
-    unsigned char hash[16]; 
+    unsigned int block_size = mhash_get_block_size((hashid)type);
+    unsigned char hash[block_size];
     mhash_deinit(td, hash);
 
-    unsigned int i;
-    for (i = 0; i < mhash_get_block_size(type); i++) {
+    //printf("block_size: %d\n", block_size);
+    //printf("hash: %s\n", hash);
+    /*unsigned int i;
+    for (i = 0; i < block_size; i++) {
         printf("%.2x", hash[i]);
     }
-    printf("\n");
- 
+    printf("\n");*/
+
+    unsigned char *result;
+    bin_to_hex((unsigned char *)hash, block_size, &result);
+    //printf("result : %s\n", result);
+    //free(result);
+
+    *out = result;
+    *outsize = block_size * 2;
+
     return 0;
 }
 
@@ -134,52 +212,5 @@ int ext_hmac(){
  * @see clientlib.h 
  */
 int ext_keygen(){ 
-    return 0;
-}
-
-/**
- * @see clientlib.h 
- */
-int selftest(){ 
-    char* algo = "rijndael-128";
-    char* mode = "cbc";
-    char* plaintext = "test text 123";
-    char* IV = "AAAAAAAAAAAAAAAA";
-    char* key = "0123456789abcdef";
-    int keysize = 16; /* 128 bits */
-    char* buffer;
-    int buffer_len = 16;
-     
-    buffer = calloc(1, buffer_len);
-    strncpy(buffer, plaintext, buffer_len);
-     
-    printf("plain: %s\n", plaintext);
-    ext_encrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
-    printf("cipher: "); display(buffer, buffer_len);
-    //printf("cipher: %s\n", buffer);
-    ext_decrypt(algo, mode, buffer, buffer_len, IV, key, keysize);
-    printf("decrypt: %s\n", buffer); 
-    
-    // MHASH
-    
-     // source data
-    char* test_hash = "Hello World"; 
-    
-    // md5: b10a8db164e0754105b7a99be72e3fe5
-    printf("Testing MHASH_MD5 ...\n");
-    ext_hash(MHASH_MD5, test_hash);
-    
-    // sha1: 0a4d55a8d778e5022fab701977c5d840bbc486d0
-    printf("Testing MHASH_SHA1 ...\n");
-    ext_hash(MHASH_SHA1, test_hash);
-       
-    // sha256: a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e
-    printf("Testing MHASH_SHA256 ...\n");
-    ext_hash(MHASH_SHA256, test_hash);
-    
-    // sha512: 2c74fd17edafd80e8447b0d46741ee243b7eb74dd2149a0ab1b9246fb30382f27e853d8585719e0e67cbda0daa8f51671064615d645ae27acb15bfb1447f459b
-    printf("Testing MHASH_SHA512 ...\n");
-    ext_hash(MHASH_SHA512, test_hash);
-    
     return 0;
 }
