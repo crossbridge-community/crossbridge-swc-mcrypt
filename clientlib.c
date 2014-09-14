@@ -93,20 +93,9 @@
 /**
  * @private
  */
-void display(char* ciphertext, int len){
-    int i;
-    for (i = 0; i < len; i++){
-        printf("%d", ciphertext[i]);
-    }
-    printf("\n");
-}
-
-/**
- * @private
- */
 void bin_to_hex(unsigned char *bin, unsigned int binsz, unsigned char **result)
 {
-  unsigned char          hex_str[]= "0123456789abcdef";
+  unsigned char hex_str[]= "0123456789abcdef";
   unsigned int  i;
 
   *result = (unsigned char *)malloc(binsz * 2 + 1);
@@ -137,10 +126,8 @@ int ext_encrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
     if( !td ){return 1;}
     int blocksize = mcrypt_enc_get_block_size(td);
     int keysize = mcrypt_enc_get_key_size(td);
-    printf("keysize: %d\n", keysize);
-    printf("key_len: %d\n", key_len);
     if( buffer_len % blocksize != 0 ){return 1;}
-    //if( key_len % keysize != 0 ){return 3;}
+    //if( keysize %  key_len != 0 ){return 1;}
     mcrypt_generic_init(td, key, key_len, IV);
     mcrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
@@ -156,10 +143,8 @@ int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
     if( !td ){return 1;}
     int blocksize = mcrypt_enc_get_block_size(td);
     int keysize = mcrypt_enc_get_key_size(td);
-    printf("keysize: %d\n", keysize);
-    printf("key_len: %d\n", key_len);
     if( buffer_len % blocksize != 0 ){return 1;}
-    //if( key_len % keysize != 0 ){return 3;}
+    //if( keysize % key_len != 0 ){return 1;}
     mcrypt_generic_init(td, key, key_len, IV);
     mdecrypt_generic(td, buffer, buffer_len);
     mcrypt_generic_deinit (td);
@@ -182,35 +167,91 @@ int ext_hash(int type, char* buffer, unsigned char** out, unsigned int* outsize)
     unsigned char hash[block_size];
     mhash_deinit(td, hash);
 
-    //printf("block_size: %d\n", block_size);
-    //printf("hash: %s\n", hash);
-    /*unsigned int i;
-    for (i = 0; i < block_size; i++) {
-        printf("%.2x", hash[i]);
-    }
-    printf("\n");*/
-
     unsigned char *result;
     bin_to_hex((unsigned char *)hash, block_size, &result);
-    //printf("result : %s\n", result);
-    //free(result);
 
     *out = result;
     *outsize = block_size * 2;
 
+    free(result);
+
     return 0;
 }
 
 /**
  * @see clientlib.h 
  */
-int ext_hmac(){ 
+int ext_hmac(int type, char* password, char* data, unsigned char** out, unsigned int* outsize){
+    unsigned int passlen = strlen(password);
+    unsigned int datalen = strlen(data);
+    MHASH td = mhash_hmac_init((hashid)type, password, passlen, mhash_get_hash_pblock(MHASH_MD5));
+    mhash(td, data, datalen);
+    unsigned char *mac = mhash_hmac_end(td);
+    unsigned char *tmp = mutils_asciify(mac, mhash_get_block_size(MHASH_MD5));
+    unsigned int tmp_len = strlen(tmp);
+    *out = tmp;
+    *outsize = tmp_len;
+    mutils_free(tmp);
     return 0;
 }
 
 /**
  * @see clientlib.h 
  */
-int ext_keygen(){ 
+int ext_keygen(int type, char* password, unsigned char** out, unsigned int* outsize){
+    unsigned char *tmp;
+    unsigned char *salt;
+    unsigned int passlen;
+    unsigned int keysize;
+    unsigned int salt_size;
+    KEYGEN data;
+    unsigned char *key;
+
+    passlen=strlen(password)+1;
+    //printf("passlen : %d\n", passlen);
+
+    if (mhash_get_keygen_max_key_size(KEYGEN_MCRYPT)==0) {
+        keysize=100;
+    } else {
+        keysize = mhash_get_keygen_max_key_size(KEYGEN_MCRYPT);
+    }
+
+    if (mhash_get_keygen_salt_size(KEYGEN_MCRYPT)==0) {
+        salt_size=10;
+    } else {
+        salt_size = mhash_get_keygen_salt_size(KEYGEN_MCRYPT);
+    }
+
+    salt = (unsigned char *) mutils_malloc(salt_size);
+    key = (unsigned char *) mutils_malloc(keysize);
+
+    if ((salt == NULL) || (key == NULL))
+    {
+        return 1;
+    }
+
+    data.hash_algorithm[0] = (hashid)type;
+    data.count = 0;
+    data.salt = salt;
+    data.salt_size = salt_size;
+
+    mhash_keygen_ext(KEYGEN_MCRYPT, data, key, keysize, password, passlen);
+
+    tmp = mutils_asciify(key, keysize);
+
+    if ((tmp == NULL))
+    {
+        return 1;
+    }
+
+    unsigned int tmp_len = strlen(tmp) + 1;
+
+    *out = tmp;
+    *outsize = tmp_len;
+
+    mutils_free(password);
+    mutils_free(key);
+    mutils_free(tmp);
+
     return 0;
 }

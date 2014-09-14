@@ -140,6 +140,31 @@ int ext_decrypt(char* algo, char* mode, void* buffer, int buffer_len, char* IV, 
  */
 int ext_hash(int type, char* buffer, unsigned char** out, unsigned int* outsize);
 
+/**
+ * KeyGen
+ *
+ * @param hashid
+ * @param password
+ * @param out
+ * @param outsize
+ *
+ * @return int
+ */
+int ext_keygen(int type, char* password, unsigned char** out, unsigned int* outsize);
+
+/**
+ * HMAC
+ *
+ * @param hashid
+ * @param password
+ * @param data
+ * @param out
+ * @param outsize
+ *
+ * @return int
+ */
+int ext_hmac(int type, char* password, char* data, unsigned char** out, unsigned int* outsize);
+
 //----------------------------------
 //  CPP End
 //----------------------------------

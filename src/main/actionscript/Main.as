@@ -73,8 +73,8 @@ public class Main extends Sprite implements ISpecialFile {
         output.wordWrap = true;
         output.width = stage.stageWidth;
         output.height = stage.stageHeight;
-        addChild(output);        
-        
+        addChild(output);
+
         stage.frameRate = 60;
         stage.scaleMode = StageScaleMode.NO_SCALE;
 
@@ -82,50 +82,21 @@ public class Main extends Sprite implements ISpecialFile {
 
         //addEventListener(Event.ENTER_FRAME, enterFrame);
 
-        printLine("MD5:");
-        testAlgo(ClientLib.MHASH_MD5, "b10a8db164e0754105b7a99be72e3fe5");
-
-        printLine("SHA1:");
-        testAlgo(ClientLib.MHASH_SHA1, "0a4d55a8d778e5022fab701977c5d840bbc486d0");
-
-        printLine("SHA256:");
-        testAlgo(ClientLib.MHASH_SHA256, "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e");
-
-        printLine("SHA512:");
-        testAlgo(ClientLib.MHASH_SHA512, "2c74fd17edafd80e8447b0d46741ee243b7eb74dd2149a0ab1b9246fb30382f27e853d8585719e0e67cbda0daa8f51671064615d645ae27acb15bfb1447f459b");
-
+        printLine("RIJNDAEL_128:");
         var bytes:ByteArray = new ByteArray();
         bytes.endian = "littleEndian";
-        for(var i:int=0;i<16;i++)
+        for (var i:int = 0; i < 16; i++) {
             bytes.writeInt(i);
+        }
         bytes.position = 0;
         var bytesPtr:int = CModule.malloc(bytes.length);
         CModule.writeBytes(bytesPtr, bytes.length, bytes);
         printLine(ClientLib.ext_encrypt(ClientLib.MCRYPT_RIJNDAEL_128, ClientLib.MCRYPT_CBC, bytesPtr, bytes.length, "AAAAAAAAAAAAAAAA", "0123456789abcdef", 16).toString());
-    }
-
-    /**
-     * @private
-     */
-    private function testAlgo(type:int, expected:String):void {
-        var outputPtr:int = CModule.malloc(4);
-        var outputLengthPtr:int = CModule.malloc(4);
-        ClientLib.ext_hash(type, "Hello World", outputPtr, outputLengthPtr);
-        var outputLength:int = CModule.read32(outputLengthPtr);
-        var outputString:String = CModule.readString(CModule.read32(outputPtr), outputLength);
-        printLine(outputString + " (length=" + outputLength + ")" + " (success=" + (outputString == expected) + ")");
-        CModule.free(outputPtr);
-        CModule.free(outputLengthPtr);
-    }
-        
-     
-    /**
-     * @private
-     */
-    private function dumpBA(input:ByteArray):void {
-        input.position = 0;
-        trace(input.readUTF());
-        input.position = 0;
+        printLine(ClientLib.ext_decrypt(ClientLib.MCRYPT_RIJNDAEL_128, ClientLib.MCRYPT_CBC, bytesPtr, bytes.length, "AAAAAAAAAAAAAAAA", "0123456789abcdef", 16).toString());
+        /*bytes.position = 0;
+        for (var j:int = 0; j < 16; j++) {
+            trace(bytes.readInt());
+        }*/
     }
 
     /**
